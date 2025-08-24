@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jellyfin Uploader Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #6F36FF 0%, #8083FF 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .container {
+      background: rgba(30, 14, 60, 0.92);
+      border-radius: 20px;
+      box-shadow: 0 8px 36px 0 rgba(0,0,0,0.23);
+      padding: 38px 30px;
+      max-width: 420px;
+      width: 96vw;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.5rem; color: #a6afff; font-weight: 700; margin-bottom: 22px;
+    }
+    .menu {
+      display: flex; flex-direction: column; gap: 18px; margin:28px 0 10px 0;
+    }
+    .menu button {
+      background: linear-gradient(90deg,#6F36FF 0%,#8083FF 100%);
+      border-radius: 22px;
+      font-size: 1.12rem;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px #6f36ff23;
+      padding: 14px 0;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin:0;
+      width: 100%;
+    }
+    .menu button:hover { background: #6F36FF; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Upload Media to Jellyfin</h1>
+    <div class="menu">
+        <button onclick="location.href='/upload/photos'">📷 Upload Photos</button>
+        <button onclick="location.href='/upload/video'">🎬 Upload Videos</button>
+        <button onclick="location.href='/upload/movie'">🎞️ Upload Movie</button>
+        <button onclick="location.href='/upload/series'">📺 Upload TV-Series</button>
+        <button onclick="location.href='/upload/directory'">📁 Upload Picture/Video Directory</button>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <button onclick="location.href='/admin/users'">👥 User Management</button>
+        {% endif %}
+    </div>
+  </div>
+</body>
+</html>

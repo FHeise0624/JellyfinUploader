@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Jellyfin Media Uploader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #6F36FF, #7C56FF 100%);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .landing-container {
+      background: rgba(30, 14, 60, 0.94);
+      border-radius: 22px;
+      box-shadow: 0 8px 36px 0 rgba(0,0,0,0.23);
+      padding: 38px 36px 30px 36px;
+      max-width: 420px;
+      width: 96vw;
+      text-align: center;
+    }
+    .jellyfin-logo {
+      margin-bottom: 22px;
+      filter: drop-shadow(0 2px 30px #6F36FF88);
+      width: 62px;
+      height: auto;
+    }
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: #a6afff;
+      margin-bottom: 14px;
+    }
+    p {
+      font-size: 1.13rem;
+      color: #e3e3fc;
+      margin-bottom: 32px;
+    }
+    .cta-btn {
+      background: linear-gradient(90deg, #6f36ff 30%, #8083ff 100%);
+      border: none;
+      color: #fff;
+      font-size: 1.13rem;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 28px;
+      box-shadow: 0 2px 8px #6f36ff40;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      display: inline-block;
+    }
+    .cta-btn:hover {
+      background: #6f36ff;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-container">
+    <svg class="jellyfin-logo" viewBox="0 0 464 464" fill="none"><ellipse cx="232" cy="232" rx="232" ry="232" fill="#6F36FF"/><path d="M232 368c119.6-92.837 207.431-101.628 185.93-212.196C397.536 49.875 318.608 82.371 232 168.001c-86.608-85.63-165.536-118.126-185.93-12.197C24.569 266.372 112.399 275.163 232 368z" fill="#8083FF"/></svg>
+    <h1>Jellyfin Media Uploader</h1>
+    <p>
+      Welcome! Use this tool to upload your media collections straight to your Jellyfin server from any device in your home network.<br>
+      Photos, videos, and folders – fast and secure.
+    </p>
+    <a href="/login" class="cta-btn">Login</a>
+  </div>
+</body>
+</html>

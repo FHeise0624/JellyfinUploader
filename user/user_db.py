@@ -1,0 +1,26 @@
+from user.models import db, User
+from werkzeug.security import generate_password_hash, check_password_hash
+
+def get_user_by_id(user_id):
+    return User.query.get(int(user_id))
+
+def get_all_users():
+    return User.query.all()
+
+def get_user(username):
+    return User.query.filter_by(username=username).first()
+
+def new_user(username, password, role):
+    hashed_password = generate_password_hash(password)
+    user = User(username=username, password=hashed_password, role=role)
+    db.session.add(user)
+    db.session.commit()
+
+def delete_user(userid):
+    user = User.query.get(int(userid))
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+
+def verify_password(user, password):
+    return check_password_hash(user.password, password)
