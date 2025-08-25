@@ -36,17 +36,17 @@ def unauthorized_callback():
 def set_user_paths():
     if current_user.is_authenticated:
         if current_user.username == "Arnika":
-            g.upload_folder = 'Z:\\Arnika'
-            g.pictures_folder = 'Z:\\Arnika\\Bilder'
-            g.videos_folder = 'Z:\\Arnika\\Videos'
-            g.movie_folder = 'Z:\\Filme'
-            g.series_folder = 'Z:\\Serien'
+            g.upload_folder = 'D:\\Arnika'
+            g.pictures_folder = 'D:\\Arnika\\Bilder'
+            g.videos_folder = 'D:\\Arnika\\Videos'
+            g.movie_folder = 'D:\\Filme'
+            g.series_folder = 'D:\\Serien'
         else:
-            g.upload_folder = 'Z:\\'
-            g.pictures_folder = 'Z:\\Bilder'
-            g.videos_folder = 'Z:\\Videos'
-            g.movie_folder = 'Z:\\Filme'
-            g.series_folder = 'Z:\\Serien'
+            g.upload_folder = 'D:\\'
+            g.pictures_folder = 'D:\\Bilder'
+            g.videos_folder = 'D:\\Videos'
+            g.movie_folder = 'D:\\Filme'
+            g.series_folder = 'D:\\Serien'
     else:
         g.upload_folder = None
         g.pictures_folder = None
@@ -102,10 +102,15 @@ def upload_picture():
     if request.method == 'POST':
         picture = request.files['picture']
         directory = request.form['directory']
-        if request.form.get('new_directory'):
-            directory = os.path.join(pictures, directory)
+        if directory == "__new__":
+            new_dir_name = request.form.get('new_directory', '').strip()
+            if not new_dir_name:
+                return "Kein neuer Ordnername angegeben", 400
+            directory = new_dir_name  # Neuen Ordnernamen verwenden
+
         destination = os.path.join(pictures, directory)
         os.makedirs(destination, exist_ok=True)
+
         destination_path = os.path.join(destination, picture.filename)
         picture.save(destination_path)
         return '', 200
@@ -121,10 +126,16 @@ def upload_video():
     if request.method == 'POST':
         video = request.files['video']
         directory = request.form['directory']
-        if request.form.get('new_directory'):
-            directory = os.path.join(videos, directory)
+        if directory == "__new__":
+            new_dir_name = request.form.get('new_directory', '').strip()
+            if not new_dir_name:
+                return "Kein neuer Ordnername angegeben", 400
+            directory = new_dir_name
+
         destination = os.path.join(videos, directory)
         os.makedirs(destination, exist_ok=True)
+        # ...
+
         destination_path = os.path.join(destination, video.filename)
         video.save(destination_path)
         return '', 200

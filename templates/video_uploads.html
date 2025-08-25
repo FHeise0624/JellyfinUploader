@@ -62,13 +62,14 @@
             var newField = document.getElementById('new-directory-field');
             var newInput = document.getElementById('new-directory');
             if (this.value === "__new__") {
-                newFiled.style.display = "block";
+                newField.style.display = "block";  // korrigiert
                 newInput.required = true;
             } else {
                 newField.style.display = "none";
                 newInput.required = false;
             }
         });
+
 
         document.getElementById('uploadForm').addEventListener('submit', function (e) {
             e.preventDefault();

@@ -55,12 +55,18 @@ def rename_episode(filename, series_folder_name, season_folder_name=None):
         return f"{sanitize_name(series_folder_name)} {clean_base}{ext}"
 
 def normalize_season_folder(name):
+    # Versuche, "season X" zu matchen
     m = re.match(r'season\s*(\d+)', name, re.IGNORECASE)
     if m:
         season_num = int(m.group(1))
         return f"Season {season_num:02d}"
-    else:
-        return sanitize_name(name)
+    # Versuche, "SXX" zu matchen (z.B. S00, S01, etc.)
+    m = re.match(r's(\d{1,2})', name, re.IGNORECASE)
+    if m:
+        season_num = int(m.group(1))
+        return f"Season {season_num:02d}"
+    # Falls nichts passt, Name sanitisieren (vorhandene Funktion)
+    return sanitize_name(name)
 
 def admin_required(f):
     @wraps(f)
