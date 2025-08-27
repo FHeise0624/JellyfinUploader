@@ -36,17 +36,17 @@ def unauthorized_callback():
 def set_user_paths():
     if current_user.is_authenticated:
         if current_user.username == "Arnika":
-            g.upload_folder = 'D:\\Arnika'
-            g.pictures_folder = 'D:\\Arnika\\Bilder'
-            g.videos_folder = 'D:\\Arnika\\Videos'
-            g.movie_folder = 'D:\\Filme'
-            g.series_folder = 'D:\\Serien'
+            g.upload_folder = '/media/felix/server'
+            g.pictures_folder = '/media/felix/server/Arnikas Photos'
+            g.videos_folder = '/media/felix/server/Arnikas Videos'
+            g.movie_folder = '/media/felix/server/Movies'
+            g.series_folder = '/media/felix/server/Series'
         else:
-            g.upload_folder = 'D:\\'
-            g.pictures_folder = 'D:\\Bilder'
-            g.videos_folder = 'D:\\Videos'
-            g.movie_folder = 'D:\\Filme'
-            g.series_folder = 'D:\\Serien'
+            g.upload_folder = '/media/felix/server'
+            g.pictures_folder = '/media/felix/server/Photos'
+            g.videos_folder = '/media/felix/server/Videos'
+            g.movie_folder = '/media/felix/server/Movies'
+            g.series_folder = '/media/felix/server/Series'
     else:
         g.upload_folder = None
         g.pictures_folder = None
