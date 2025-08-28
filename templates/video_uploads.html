@@ -37,12 +37,9 @@
         <button class="back-button" onclick="window.location.href='/dashboard'">&larr; Back to Dashboard</button>
         <h1>Upload a Video</h1>
         <form id="uploadForm">
-
-            <!-- Checkbox für Shared -->
             <label>
                 <input type="checkbox" id="sharedCheckbox" name="shared"> Upload to Shared Folder
             </label>
-
             <label for="directory">Choose destination folder:</label>
             <select id="directory" name="directory" required>
                 <optgroup id="personalGroup" label="Personal Folders">
@@ -57,12 +54,10 @@
                 </optgroup>
                 <option value="__new__">Create a new folder ...</option>
             </select>
-
             <div id="new-directory-field">
                 <label for="new_directory">New folder name:</label>
                 <input type="text" name="new_directory" id="new_directory">
             </div>
-
             <label for="video">Choose a video:</label>
             <input type="file" name="video" id="video" multiple accept=".mp4, .mov, .mkv, .avi, .flv, .wmv, .webm, .3gp, .m4v" required>
             <input type="submit" value="Upload">
@@ -72,7 +67,6 @@
             <div class="progress-bar" id="progressBar"></div>
         </div>
     </div>
-
     <script>
         const dirSelect = document.getElementById('directory');
         const newField = document.getElementById('new-directory-field');
@@ -80,19 +74,22 @@
         const checkbox = document.getElementById('sharedCheckbox');
         const personalGroup = document.getElementById('personalGroup');
         const sharedGroup = document.getElementById('sharedGroup');
-
-        // Umschalten neues Ordnerfeld
+        function showNewDirField() {
+            newField.style.display = "block";
+            newInput.required = true;
+        }
+        function hideNewDirField() {
+            newField.style.display = "none";
+            newInput.required = false;
+            newInput.value = "";
+        }
         dirSelect.addEventListener('change', function(){
             if (this.value === "__new__") {
-                newField.style.display = "block";
-                newInput.required = true;
+                showNewDirField();
             } else {
-                newField.style.display = "none";
-                newInput.required = false;
+                hideNewDirField();
             }
         });
-
-        // Checkbox ändert sichtbare Gruppen im Dropdown
         checkbox.addEventListener('change', function() {
             if (this.checked) {
                 personalGroup.style.display = "none";
@@ -101,17 +98,15 @@
                 personalGroup.style.display = "block";
                 sharedGroup.style.display = "none";
             }
-            // Reset Auswahl immer auf ersten Ordner
             dirSelect.selectedIndex = 0;
+            hideNewDirField();
         });
-
         document.getElementById('uploadForm').addEventListener('submit', function (e) {
             e.preventDefault();
             var files = document.getElementById('video').files;
             var directory = dirSelect.value;
             var newDirectory = newInput.value;
             if (!files.length) return;
-
             var formData = new FormData();
             for (var i = 0; i < files.length; i++) {
                 formData.append('video', files[i], files[i].name);
@@ -120,18 +115,13 @@
             if (directory === '__new__' && newDirectory) {
                 formData.append('new_directory', newDirectory);
             }
-
-            // Checkbox-Status mitsenden
             if (checkbox.checked) {
                 formData.append('shared', 'on');
             }
-
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/upload/video', true);
-
             var progressBar = document.getElementById('progressBar');
             var progressText = document.getElementById('progressText');
-
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
                     var percent = (e.loaded / e.total * 100).toFixed(1);
@@ -139,7 +129,6 @@
                     progressText.innerText = "Uploading... " + percent + "%";
                 }
             };
-
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     progressBar.style.width = "100%";
@@ -148,8 +137,8 @@
                       progressBar.style.width = "0";
                       progressText.innerText = "";
                       e.target.reset();
-                      newField.style.display = "none";
-                      sharedGroup.style.display = "none"; // Reset auf Personal
+                      hideNewDirField();
+                      sharedGroup.style.display = "none";
                       personalGroup.style.display = "block";
                       checkbox.checked = false;
                     }, 2000);
@@ -157,7 +146,6 @@
                     progressText.innerText = "Error: " + xhr.status;
                 }
             };
-
             xhr.send(formData);
         });
     </script>
