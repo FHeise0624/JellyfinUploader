@@ -12,7 +12,15 @@ def get_user(username):
 
 def new_user(username, password, role):
     hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, role=role)
+
+    if role == "admin":
+        final_role = "admin"
+    elif role == "child":
+        final_role = "child"
+    else:
+        final_role = "user"
+
+    user = User(username=username, password=hashed_password, role=final_role)
     db.session.add(user)
     db.session.commit()
 

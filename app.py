@@ -305,14 +305,15 @@ def admin_new_user():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        is_admin_checked = request.form.get('is_admin') == "1"
 
         if not username or not password:
             flash("Username or password is required")
             return redirect('/admin/new_user')
 
         password_hash = generate_password_hash(password)
-        role = "admin" if is_admin_checked else "user"
+        role = "admin" if request.form.get('is_admin') == "1" else "user"
+        if role not in ['admin', 'user', 'child']:
+            role = "user"
 
         new_user = User(username=username, password=password_hash, role=role)
         db.session.add(new_user)
