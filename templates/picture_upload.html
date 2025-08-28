@@ -39,17 +39,28 @@
     <form id="uploadForm">
       <label for="directory">Choose destination folder:</label>
       <select id="directory" name="directory" required>
-        {% for d in directories %}
-          <option value="{{ d }}">{{ d }}</option>
-        {% endfor %}
-        <option value="__new__">Create a new folder...</option>
+          <optgroup label="Personal Directories" class="personal-group">
+            {% for d in personal_dirs %}
+              <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </optgroup>
+          <optgroup label="Shared Directories" class="shared-group" style="display:none;">
+            {% for d in shared_dirs %}
+              <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </optgroup>
+          <option value="__new__">Create a new folder...</option>
       </select>
       <div id="new-directory-field">
         <label for="new_directory">New folder name:</label>
         <input type="text" name="new_directory" id="new_directory">
       </div>
+      <label>
+          <input type="checkbox" name="shared" id="shared">
+          Upload to shared folder
+      </label>
       <label for="picture">Choose a picture:</label>
-      <input type="file" name="picture" id="picture" accept=".jpg,.jpeg,.png,.gif,.bmp" required>
+      <input type="file" name="picture" id="picture" multiple accept=".jpg,.jpeg,.png,.gif,.bmp" required>
       <input type="submit" value="Upload">
     </form>
     <div class="progress-text" id="progressText"></div>
@@ -58,59 +69,90 @@
     </div>
   </div>
   <script>
-    document.getElementById('directory').addEventListener('change', function() {
-      var newField = document.getElementById('new-directory-field');
-      var newInput = document.getElementById('new_directory');
-      if (this.value === "__new__") {
-        newField.style.display = "block";
-        newInput.required = true;
+  document.getElementById('directory').addEventListener('change', function() {
+    var newField = document.getElementById('new-directory-field');
+    var newInput = document.getElementById('new_directory');
+    if (this.value === "__new__") {
+      newField.style.display = "block";
+      newInput.required = true;
+    } else {
+      newField.style.display = "none";
+      newInput.required = false;
+    }
+  });
+
+  document.getElementById('shared').addEventListener('change', function() {
+    var personalGroup = document.querySelector('optgroup.personal-group');
+    var sharedGroup = document.querySelector('optgroup.shared-group');
+    if (this.checked) {
+      personalGroup.style.display = 'none';
+      sharedGroup.style.display = 'block';
+    } else {
+      personalGroup.style.display = 'block';
+      sharedGroup.style.display = 'none';
+    }
+    var directorySelect = document.getElementById('directory');
+    var event = new Event('change');
+    directorySelect.dispatchEvent(event);
+  });
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var sharedCheckbox = document.getElementById('shared');
+    if (sharedCheckbox) {
+      var event = new Event('change');
+      sharedCheckbox.dispatchEvent(event);
+    }
+  });
+
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = e.target;
+    var files = document.getElementById('picture').files;
+    var directory = document.getElementById('directory').value;
+    var new_directory = document.getElementById('new_directory').value;
+    var shared = document.getElementById('shared').checked;
+    if (files.length === 0) return;
+    var formData = new FormData();
+    for (var i = 0; i < files.length; i++) {
+      formData.append('picture', files[i], files[i].name);
+    }
+    formData.append('directory', directory);
+    if (directory === "__new__" && new_directory) {
+      formData.append('new_directory', new_directory);
+    }
+    if (shared) {
+      formData.append('shared', 'on');
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload/photos', true);
+    var progressBar = document.getElementById('progressBar');
+    var progressText = document.getElementById('progressText');
+    xhr.upload.onprogress = function(e) {
+      if (e.lengthComputable) {
+        var percent = (e.loaded / e.total * 100).toFixed(1);
+        progressBar.style.width = percent + "%";
+        progressText.innerText = "Uploading... " + percent + "%";
+      }
+    };
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        progressBar.style.width = "100%";
+        progressText.innerText = "Upload complete!";
+        setTimeout(() => {
+          progressBar.style.width = "0";
+          progressText.innerText = "";
+          form.reset();
+          document.getElementById('new-directory-field').style.display = "none";
+          document.getElementById('shared').checked = false;
+          var event = new Event('change');
+          document.getElementById('shared').dispatchEvent(event);
+        }, 2000);
       } else {
-        newField.style.display = "none";
-        newInput.required = false;
+        progressText.innerText = "Error: " + xhr.status;
       }
-    });
-
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var form = e.target;
-      var file = document.getElementById('picture').files[0];
-      var directory = document.getElementById('directory').value;
-      var new_directory = document.getElementById('new_directory').value;
-      if (!file) return;
-
-      var formData = new FormData();
-      formData.append('picture', file, file.name);
-      formData.append('directory', directory);
-      if (directory === "__new__" && new_directory) {
-        formData.append('new_directory', new_directory);
-      }
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/upload/photos', true);
-
-      var progressBar = document.getElementById('progressBar');
-      var progressText = document.getElementById('progressText');
-
-      xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-          var percent = (e.loaded / e.total * 100).toFixed(1);
-          progressBar.style.width = percent + "%";
-          progressText.innerText = "Uploading... " + percent + "%";
-        }
-      };
-
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          progressBar.style.width = "100%";
-          progressText.innerText = "Upload complete!";
-          setTimeout(()=>{progressBar.style.width="0";progressText.innerText="";form.reset();document.getElementById('new-directory-field').style.display="none";},2000);
-        } else {
-          progressText.innerText = "Error: " + xhr.status;
-        }
-      };
-
-      xhr.send(formData);
-    });
+    };
+    xhr.send(formData);
+  });
   </script>
 </body>
 </html>
