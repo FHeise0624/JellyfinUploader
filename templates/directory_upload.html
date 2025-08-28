@@ -47,7 +47,7 @@
       font-weight: 700;
       letter-spacing: 1px;
       color: #9f9fff;
-      margin-top: 48px; /* Added margin to clear the back button */
+      margin-top: 48px;
     }
     .jellyfin-logo {
       display: block;
@@ -130,18 +130,21 @@
     <svg class="jellyfin-logo" viewBox="0 0 464 464" fill="none"><ellipse cx="232" cy="232" rx="232" ry="232" fill="#6F36FF"/><path d="M232 368c119.6-92.837 207.431-101.628 185.93-212.196C397.536 49.875 318.608 82.371 232 168.001c-86.608-85.63-165.536-118.126-185.93-12.197C24.569 266.372 112.399 275.163 232 368z" fill="#8083FF"/></svg>
     <h1>Jellyfin Media Uploader</h1>
     <form id="uploadForm" method="post" enctype="multipart/form-data">
+      <label>
+        <input type="checkbox" id="shared" name="shared">
+        Upload to shared folder
+      </label>
       <input type="file" name="file" id="fileInput" webkitdirectory multiple>
       <input type="submit" value="Upload Folder">
     </form>
-        <div class="progress-text" id="progressTextOverall"></div>
-        <div class="progress-container">
-          <div class="progress-bar" id="progressBarOverall"></div>
-        </div>
-
-        <div class="progress-text" id="progressTextCurrent"></div>
-        <div class="progress-container">
-          <div class="progress-bar" id="progressBarCurrent"></div>
-        </div>
+    <div class="progress-text" id="progressTextOverall"></div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBarOverall"></div>
+    </div>
+    <div class="progress-text" id="progressTextCurrent"></div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBarCurrent"></div>
+    </div>
     <div class="info">
       <span>Choose a folder containing pictures and videos to upload.<br>
       Files will be auto-sorted by media type.<br>
@@ -150,82 +153,75 @@
   </div>
   <script>
     async function uploadFileWithProgress(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const formData = new FormData();
-
-    formData.append('file', file, file.webkitRelativePath || file.name);
-
-    xhr.open('POST', '/upload/directory', true);
-
-    xhr.upload.onprogress = function(e) {
-      if (e.lengthComputable) {
-        // Maximal 99.9%, 100% erst bei onload
-        const percent = Math.min((e.loaded / e.total) * 100, 99.9);
-        onProgress(percent);
-      }
-    };
-
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        setTimeout(() => {
-          onProgress(100);
-          resolve();
-        }, 150); // kleine Verzögerung für glatteren UX
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error('Network error'));
-
-    xhr.send(formData);
-  });
-}
-
-async function uploadFilesSequentially(files) {
-  const progressBarOverall = document.getElementById('progressBarOverall');
-  const progressTextOverall = document.getElementById('progressTextOverall');
-  const progressBarCurrent = document.getElementById('progressBarCurrent');
-  const progressTextCurrent = document.getElementById('progressTextCurrent');
-
-  for (let i = 0; i < files.length; i++) {
-    progressTextOverall.innerText = `Gesamt: ${i} von ${files.length} Dateien hochgeladen`;
-    progressBarOverall.style.width = ((i / files.length) * 100) + '%';
-
-    progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length} wird hochgeladen...`;
-    progressBarCurrent.style.width = '0%';
-
-    try {
-      await uploadFileWithProgress(files[i], percent => {
-        progressBarCurrent.style.width = percent + '%';
-        progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length}: ${percent.toFixed(1)}%`;
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append('file', file, file.webkitRelativePath || file.name);
+        formData.append('shared', document.getElementById('shared').checked ? 'on' : '');
+        xhr.open('POST', '/upload/directory', true);
+        xhr.upload.onprogress = function(e) {
+          if (e.lengthComputable) {
+            const percent = Math.min((e.loaded / e.total) * 100, 99.9);
+            onProgress(percent);
+          }
+        };
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            setTimeout(() => {
+              onProgress(100);
+              resolve();
+            }, 150);
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(formData);
       });
-    } catch (error) {
-      progressTextCurrent.innerText = `Fehler beim Upload der Datei ${i + 1}: ${error.message}`;
-      break;
     }
-  }
 
-  progressBarOverall.style.width = '100%';
-  progressTextOverall.innerText = 'Alle Uploads abgeschlossen';
+    async function uploadFilesSequentially(files) {
+      const progressBarOverall = document.getElementById('progressBarOverall');
+      const progressTextOverall = document.getElementById('progressTextOverall');
+      const progressBarCurrent = document.getElementById('progressBarCurrent');
+      const progressTextCurrent = document.getElementById('progressTextCurrent');
 
-  setTimeout(() => {
-    progressBarOverall.style.width = '0%';
-    progressTextOverall.innerText = '';
-    progressBarCurrent.style.width = '0%';
-    progressTextCurrent.innerText = '';
-    document.getElementById('uploadForm').reset();
-  }, 2000);
-}
+      for (let i = 0; i < files.length; i++) {
+        progressTextOverall.innerText = `Gesamt: ${i} von ${files.length} Dateien hochgeladen`;
+        progressBarOverall.style.width = ((i / files.length) * 100) + '%';
 
-document.getElementById('uploadForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const files = document.getElementById('fileInput').files;
-  if (!files.length) return;
-  uploadFilesSequentially(files);
-});
+        progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length} wird hochgeladen...`;
+        progressBarCurrent.style.width = '0%';
 
+        try {
+          await uploadFileWithProgress(files[i], percent => {
+            progressBarCurrent.style.width = percent + '%';
+            progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length}: ${percent.toFixed(1)}%`;
+          });
+        } catch (error) {
+          progressTextCurrent.innerText = `Fehler beim Upload der Datei ${i + 1}: ${error.message}`;
+          break;
+        }
+      }
+
+      progressBarOverall.style.width = '100%';
+      progressTextOverall.innerText = 'Alle Uploads abgeschlossen';
+
+      setTimeout(() => {
+        progressBarOverall.style.width = '0%';
+        progressTextOverall.innerText = '';
+        progressBarCurrent.style.width = '0%';
+        progressTextCurrent.innerText = '';
+        document.getElementById('uploadForm').reset();
+      }, 2000);
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const files = document.getElementById('fileInput').files;
+      if (!files.length) return;
+      uploadFilesSequentially(files);
+    });
   </script>
 </body>
 </html>

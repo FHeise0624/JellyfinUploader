@@ -3,11 +3,10 @@ import os
 from user import user_db
 from helper import rename_episode, normalize_season_folder, admin_required
 from datetime import timedelta
-from flask import Flask, request, redirect, render_template, session, g
+from flask import Flask, request, redirect, render_template, session, g, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from user.models import db
-from werkzeug.security import check_password_hash
-
+from user.models import db, User
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = "08ba28b7f1e56669a92e1963aa2dfd87"
@@ -41,12 +40,16 @@ def set_user_paths():
             g.videos_folder = '/media/felix/server/Arnikas Videos'
             g.movie_folder = '/media/felix/server/Movies'
             g.series_folder = '/media/felix/server/Series'
+            g.shared_pictures_folder = '/media/felix/server/Shared Photos'
+            g.shared_videos_folder = '/media/felix/server/Shared Videos'
         else:
             g.upload_folder = '/media/felix/server'
             g.pictures_folder = '/media/felix/server/Photos'
             g.videos_folder = '/media/felix/server/Videos'
             g.movie_folder = '/media/felix/server/Movies'
             g.series_folder = '/media/felix/server/Series'
+            g.shared_pictures_folder = '/media/felix/server/Shared Photos'
+            g.shared_videos_folder = '/media/felix/server/Shared Videos'
     else:
         g.upload_folder = None
         g.pictures_folder = None
@@ -98,33 +101,12 @@ def logout():
 @app.route('/upload/photos', methods=['GET', 'POST'])
 @login_required
 def upload_picture():
-    pictures = g.pictures_folder
+
     if request.method == 'POST':
-        picture = request.files['picture']
-        directory = request.form['directory']
-        if directory == "__new__":
-            new_dir_name = request.form.get('new_directory', '').strip()
-            if not new_dir_name:
-                return "Kein neuer Ordnername angegeben", 400
-            directory = new_dir_name  # Neuen Ordnernamen verwenden
+        shared = request.form.get('shared') == 'on'
+        base_folder = g.shared_pictures_folder if shared else g.pictures_folder
 
-        destination = os.path.join(pictures, directory)
-        os.makedirs(destination, exist_ok=True)
-
-        destination_path = os.path.join(destination, picture.filename)
-        picture.save(destination_path)
-        return '', 200
-    else:
-        dir_list =  [d for d in os.listdir(pictures) if os.path.isdir(os.path.join(pictures, d))]
-        return render_template('picture_upload.html',  directories=dir_list)
-
-# Video upload
-@app.route('/upload/video', methods=['GET', 'POST'])
-@login_required
-def upload_video():
-    videos= g.videos_folder
-    if request.method == 'POST':
-        video = request.files['video']
+        files = request.files.getlist('picture')
         directory = request.form['directory']
         if directory == "__new__":
             new_dir_name = request.form.get('new_directory', '').strip()
@@ -132,39 +114,78 @@ def upload_video():
                 return "Kein neuer Ordnername angegeben", 400
             directory = new_dir_name
 
-        destination = os.path.join(videos, directory)
+        destination = os.path.join(base_folder, directory)
         os.makedirs(destination, exist_ok=True)
-        # ...
 
-        destination_path = os.path.join(destination, video.filename)
-        video.save(destination_path)
+        for picture in files:
+            destination_path = os.path.join(destination, picture.filename)
+            picture.save(destination_path)
         return '', 200
     else:
-        dir_list = [d for d in os.listdir(videos) if os.path.isdir(os.path.join(videos, d))]
-        return render_template('video_uploads.html', directories=dir_list)
+        personal_dirs = [d for d in os.listdir(g.pictures_folder) if os.path.isdir(os.path.join(g.pictures_folder, d))]
+        shared_dirs = [d for d in os.listdir(g.shared_pictures_folder) if os.path.isdir(os.path.join(g.shared_pictures_folder, d))]
+
+        return render_template('picture_upload.html', personal_dirs=personal_dirs, shared_dirs=shared_dirs)
+
+
+# Video upload
+@app.route('/upload/video', methods=['GET', 'POST'])
+@login_required
+def upload_video():
+    videos = g.videos_folder
+    shared_videos_dir = g.shared_videos_folder
+    if request.method == 'POST':
+        files = request.files.getlist('video')
+        directory = request.form['directory']
+        shared = request.form.get('shared') == 'on'
+
+        if directory == "__new__":
+            new_dir_name = request.form.get('new_directory', '').strip()
+            if not new_dir_name:
+                return "Kein neuer Ordnername angegeben", 400
+            directory = new_dir_name
+
+        base_folder = shared_videos_dir if shared else videos
+        destination = os.path.join(base_folder, directory)
+        os.makedirs(destination, exist_ok=True)
+
+        for video in files:
+            destination_path = os.path.join(destination, video.filename)
+            video.save(destination_path)
+        return '', 200
+
+    else:
+        personal_dirs = [d for d in os.listdir(videos) if os.path.isdir(os.path.join(videos, d))]
+        shared_dirs = [d for d in os.listdir(shared_videos_dir) if os.path.isdir(os.path.join(shared_videos_dir, d))]
+        return render_template('video_uploads.html', personal_dirs=personal_dirs, shared_dirs=shared_dirs)
 
 # Movie Uploads
 @app.route('/upload/movie', methods=['GET', 'POST'])
 @login_required
 def upload_movie():
-    skipped_files = []
     movies = g.movie_folder
     if request.method == 'POST':
         movie = request.files['movie']
         directory = request.form['directory']
-        if request.form.get('new_directory'):
-            directory = os.path.join(movies, directory)
+        new_dir_name = request.form.get('new_directory', '').strip()
+
+        # Wenn ein neuer Ordnername angegeben wurde, nutze diesen als directory
+        if new_dir_name:
+            directory = new_dir_name
+
+        # Erstelle kompletten Zielpfad
         destination = os.path.join(movies, directory)
         os.makedirs(destination, exist_ok=True)
+
         destination_path = os.path.join(destination, movie.filename)
 
-        # Prüfung ob der Film existiert
+        # Prüfe ob Datei bereits existiert
         if os.path.exists(destination_path):
-            skipped_files.append(movie.filename)
             return 'OK: Datei existiert bereits', 200
 
         movie.save(destination_path)
-        return f"Übersprungene Dateien: {', '.join(skipped_files)}", 200
+        return '', 200
+
     else:
         dir_list = [d for d in os.listdir(movies) if os.path.isdir(os.path.join(movies, d))]
         return render_template('movie_upload.html', directories=dir_list)
@@ -213,10 +234,9 @@ def upload_series():
             os.makedirs(target_dir, exist_ok=True)
             target_path = os.path.join(target_dir, new_filename)
 
-            # Umbenennung bei Duplikaten mit Nummerierung
             if os.path.exists(target_path):
                 skipped_files.append(new_filename)
-                return 'OK: Datei existiert bereits', 200
+                continue
 
             try:
                 file.save(target_path)
@@ -237,35 +257,36 @@ def upload_series():
 def upload_directory():
     pictures_dir = g.pictures_folder
     videos_dir = g.videos_folder
+    shared_pictures_dir = g.shared_pictures_folder
+    shared_videos_dir = g.shared_videos_folder
+
     if request.method == 'POST':
         files = request.files.getlist('file')
+        shared = request.form.get('shared') == 'on'
 
         for file in files:
-            # Keep relative path for subdirectory support
-            filename = file.filename.replace('/', '\\')
-
-            # Use mimetypes to detect file type
+            filename = file.filename.replace('/', '\\\\')
             mime_type, _ = mimetypes.guess_type(filename)
+
             if mime_type is None:
-                # Unknown file type—skip or handle as needed
                 continue
             elif mime_type.startswith('image/'):
-                base_folder = pictures_dir
+                base_folder = shared_pictures_dir if shared else pictures_dir
             elif mime_type.startswith('video/'):
-                base_folder = videos_dir
+                base_folder = shared_videos_dir if shared else videos_dir
             else:
-                # Optionally handle or skip other types
                 continue
 
-            # Maintain subdirectory structure, skip first folder if needed
             sub_path = filename
             target_dir = os.path.join(base_folder, os.path.dirname(sub_path))
             os.makedirs(target_dir, exist_ok=True)
             target_path = os.path.join(target_dir, os.path.basename(filename))
             file.save(target_path)
+
         return '', 200
     else:
         return render_template('directory_upload.html')
+
 
 @app.route('/admin/users')
 @login_required
@@ -279,10 +300,22 @@ def admin_users():
 @admin_required
 def admin_new_user():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        role = request.form['role']
-        user_db.new_user(username, password, role)
+        username = request.form.get('username')
+        password = request.form.get('password')
+        is_admin_checked = request.form.get('is_admin') == "1"
+
+        if not username or not password:
+            flash("Username or password is required")
+            return redirect('/admin/new_user')
+
+        password_hash = generate_password_hash(password)
+        role = "admin" if is_admin_checked else "user"
+
+        new_user = User(username=username, password=password_hash, role=role)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash(f" New user {username}, with role {role} has been created!")
         return redirect('/admin/users')
     return render_template('admin_new_user.html')
 
