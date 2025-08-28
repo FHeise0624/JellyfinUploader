@@ -242,7 +242,7 @@ def upload_directory():
 
         for file in files:
             # Keep relative path for subdirectory support
-            filename = file.filename.replace('/', '\\')
+            filename = file.filename.replace('\\', '/')
 
             # Use mimetypes to detect file type
             mime_type, _ = mimetypes.guess_type(filename)
