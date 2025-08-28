@@ -265,7 +265,10 @@ def upload_directory():
         shared = request.form.get('shared') == 'on'
 
         for file in files:
-            filename = file.filename.replace('/', '\\\\')
+
+            # Keep relative path for subdirectory support
+            filename = file.filename.replace('\\', '/')
+
             mime_type, _ = mimetypes.guess_type(filename)
 
             if mime_type is None:
