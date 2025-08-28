@@ -37,20 +37,27 @@
         <button class="back-button" onclick="window.location.href='/dashboard'">&larr; Back to Dashboard</button>
         <h1>Upload a Video</h1>
         <form id="uploadForm">
+
+            <!-- Checkbox für Shared -->
+            <label>
+                <input type="checkbox" id="sharedCheckbox" name="shared"> Upload to Shared Folder
+            </label>
+
             <label for="directory">Choose destination folder:</label>
             <select id="directory" name="directory" required>
-                <optgroup label="Personal Folders">
+                <optgroup id="personalGroup" label="Personal Folders">
                 {% for d in personal_dirs %}
                     <option value="{{ d }}">{{ d }}</option>
                 {% endfor %}
                 </optgroup>
-                <optgroup label="Shared Folders">
+                <optgroup id="sharedGroup" label="Shared Folders" style="display:none;">
                 {% for d in shared_dirs %}
-                    <option value="{{ d }}" data-shared="1">{{ d }}</option>
+                    <option value="{{ d }}">{{ d }}</option>
                 {% endfor %}
                 </optgroup>
                 <option value="__new__">Create a new folder ...</option>
             </select>
+
             <div id="new-directory-field">
                 <label for="new_directory">New folder name:</label>
                 <input type="text" name="new_directory" id="new_directory">
@@ -68,9 +75,14 @@
 
     <script>
         const dirSelect = document.getElementById('directory');
+        const newField = document.getElementById('new-directory-field');
+        const newInput = document.getElementById('new_directory');
+        const checkbox = document.getElementById('sharedCheckbox');
+        const personalGroup = document.getElementById('personalGroup');
+        const sharedGroup = document.getElementById('sharedGroup');
+
+        // Umschalten neues Ordnerfeld
         dirSelect.addEventListener('change', function(){
-            var newField = document.getElementById('new-directory-field');
-            var newInput = document.getElementById('new_directory');
             if (this.value === "__new__") {
                 newField.style.display = "block";
                 newInput.required = true;
@@ -80,26 +92,37 @@
             }
         });
 
+        // Checkbox ändert sichtbare Gruppen im Dropdown
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                personalGroup.style.display = "none";
+                sharedGroup.style.display = "block";
+            } else {
+                personalGroup.style.display = "block";
+                sharedGroup.style.display = "none";
+            }
+            // Reset Auswahl immer auf ersten Ordner
+            dirSelect.selectedIndex = 0;
+        });
+
         document.getElementById('uploadForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            var form = e.target;
             var files = document.getElementById('video').files;
-            var directory = document.getElementById('directory').value;
-            var newDirectory = document.getElementById('new_directory').value;
+            var directory = dirSelect.value;
+            var newDirectory = newInput.value;
             if (!files.length) return;
 
             var formData = new FormData();
             for (var i = 0; i < files.length; i++) {
-                 formData.append('video', files[i], files[i].name);
+                formData.append('video', files[i], files[i].name);
             }
             formData.append('directory', directory);
             if (directory === '__new__' && newDirectory) {
                 formData.append('new_directory', newDirectory);
             }
 
-            // Prüfen, ob Shared-Ordner aus Dropdown gewählt wurde
-            var sharedOption = dirSelect.options[dirSelect.selectedIndex];
-            if (sharedOption.dataset.shared === "1") {
+            // Checkbox-Status mitsenden
+            if (checkbox.checked) {
                 formData.append('shared', 'on');
             }
 
@@ -124,8 +147,11 @@
                     setTimeout(function(){
                       progressBar.style.width = "0";
                       progressText.innerText = "";
-                      form.reset();
-                      document.getElementById('new-directory-field').style.display = "none";
+                      e.target.reset();
+                      newField.style.display = "none";
+                      sharedGroup.style.display = "none"; // Reset auf Personal
+                      personalGroup.style.display = "block";
+                      checkbox.checked = false;
                     }, 2000);
                 } else {
                     progressText.innerText = "Error: " + xhr.status;
