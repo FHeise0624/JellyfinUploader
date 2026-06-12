@@ -32,7 +32,7 @@
       <span class="dash-title">Directory</span>
       <span class="dash-desc">Auto-sorted by type</span>
     </a>
-    {% if current_user.is_authenticated and current_user.is_admin %}
+    {% if current_user.is_authenticated and current_user.is_admin() %}
     <a class="dash-card" href="/admin/users">
       <span class="dash-icon">👥</span>
       <span class="dash-title">Users</span>

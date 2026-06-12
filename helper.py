@@ -30,7 +30,10 @@ def rename_episode(filename, series_folder_name, season_folder_name=None):
         se_str = full_match.group(1).upper()
         # Take everything after the season-episode code for additional title info
         post_str = filename[full_match.end():].strip(' -_')
-        post_str_clean = sanitize_name(os.path.splitext(post_str)[0])
+        # Strip the file extension from post_str before sanitizing
+        if post_str.lower().endswith(ext.lower()):
+            post_str = post_str[:-len(ext)]
+        post_str_clean = sanitize_name(post_str.strip())
 
         if post_str_clean:
             return f"{sanitize_name(series_folder_name)} {se_str} {post_str_clean}{ext}"
@@ -71,7 +74,7 @@ def normalize_season_folder(name):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
+        if not current_user.is_authenticated or not current_user.is_admin():
             abort(403)
         return f(*args, **kwargs)
     return decorated
