@@ -27,6 +27,9 @@ login_manager.login_view = "login"
 PICTURE_TYPES = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
 VIDEO_TYPES = {'.mp4', '.mov', '.mkv', '.avi', '.flv', '.wmv', '.webm', '.3gp', '.m4v'}
 
+# Feature flags – set to True to re-enable
+app.config['PHOTOS_UPLOAD_ENABLED'] = False
+
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     return redirect('/')
@@ -101,6 +104,9 @@ def logout():
 @app.route('/upload/photos', methods=['GET', 'POST'])
 @login_required
 def upload_picture():
+    if not app.config.get('PHOTOS_UPLOAD_ENABLED', True):
+        flash('Photo uploads are currently disabled.', 'error')
+        return redirect('/dashboard')
 
     if request.method == 'POST':
         shared = request.form.get('shared') == 'on'

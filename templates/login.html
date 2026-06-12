@@ -1,28 +1,27 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Login - Jellyfin Uploader</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    /* Use the previous Jellyfin style for consistency */
-    body { background: linear-gradient(135deg, #6F36FF, #7C56FF 100%); color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; min-height:100vh; display:flex; justify-content:center; align-items:center;}
-    .container { background:rgba(30,14,60,0.94); border-radius:22px; box-shadow:0 8px 36px 0 rgba(0,0,0,0.23); padding:40px 32px 30px; max-width:350px; width:98vw; }
-    h1 { font-size:1.7rem; color:#a6afff; margin-bottom:16px;}
-    input[type="text"], input[type="password"] { border-radius:16px; border:none; padding:12px; width:93%; margin-bottom:18px; font-size:1rem;}
-    input[type="submit"] { padding:12px 30px; border-radius:22px; border:none; background:linear-gradient(90deg,#6f36ff 30%,#8083ff 100%); color:#fff; font-size:1.08rem; font-weight:600;}
-    .error {color:#ff8888; margin-bottom:14px;text-align:center;}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Login</h1>
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
-    <form method="post">
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <input type="submit" value="Login">
-    </form>
-  </div>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Sign in – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:80px;">
+  <svg class="logo" viewBox="0 0 464 464" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="232" cy="232" rx="232" ry="232" fill="#6F36FF"/>
+    <path d="M232 368c119.6-92.837 207.431-101.628 185.93-212.196C397.536 49.875 318.608 82.371 232 168.001c-86.608-85.63-165.536-118.126-185.93-12.197C24.569 266.372 112.399 275.163 232 368z" fill="#a48fff"/>
+  </svg>
+  <h1 class="card-title">Welcome back</h1>
+
+  {% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input type="text" id="username" name="username" required autofocus autocomplete="username">
+    </div>
+    <div class="form-group" style="margin-bottom:22px;">
+      <label class="form-label" for="password">Password</label>
+      <input type="password" id="password" name="password" required autocomplete="current-password">
+    </div>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</div>
+{% endblock %}

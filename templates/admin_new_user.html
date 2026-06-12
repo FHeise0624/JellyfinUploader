@@ -1,131 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Admin: Add New User</title>
-  <style>
-    body {
-      background: linear-gradient(135deg, #6F36FF 0%, #8083FF 100%);
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .container {
-      background: rgba(19, 19, 28, 0.97);
-      border-radius: 18px;
-      padding: 38px 24px;
-      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
-      min-width: 320px;
-      max-width: 380px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    h1 {
-      font-size: 1.7rem;
-      margin-bottom: 1em;
-      text-align: center;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #9f9fff;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    label {
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: none;
-      font-size: 1rem;
-      box-sizing: border-box;
-      background: #2a294a;
-      color: #dee0fc;
-      transition: background 0.2s;
-    }
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      outline: none;
-      background: #3c3a63;
-    }
-    input[type="checkbox"] {
-      width: auto;
-      margin: 0;
-      cursor: pointer;
-    }
-    button {
-      background: linear-gradient(90deg, #6f36ff 0%, #8083ff 100%);
-      border: none;
-      color: #fff;
-      font-size: 1.05rem;
-      font-weight: 600;
-      padding: 14px 0;
-      border-radius: 24px;
-      box-shadow: 0 2px 6px #6f36ff40;
-      cursor: pointer;
-      transition: background 0.2s;
-      width: 100%;
-    }
-    button:hover {
-      background: #6f36ff;
-    }
-    p {
-      text-align: center;
-      margin-top: 16px;
-    }
-    a {
-      color: #a6afff;
-      text-decoration: underline;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    a:hover {
-      color: #fff;
-    }
-    @media screen and (max-width: 500px) {
-      .container {
-        max-width: 95vw;
-        padding: 12vw 4vw;
-      }
-      h1 {
-        font-size: 1.4rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Add New User</h1>
+{% extends "base.html" %}
+{% block title %}Add User – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:40px;">
+  <a class="back-link" href="{{ url_for('admin_users') }}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    User list
+  </a>
 
-    <form action="{{ url_for('admin_new_user') }}" method="post">
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username" required autofocus>
+  <h1 class="card-title">Add User</h1>
 
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required>
+  <form action="{{ url_for('admin_new_user') }}" method="post">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input type="text" id="username" name="username" required autofocus autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" for="password">Password</label>
+      <input type="password" id="password" name="password" required autocomplete="new-password">
+    </div>
 
-      <label>
+    <label class="toggle-row" style="margin-bottom:22px;">
+      <span class="toggle">
         <input type="checkbox" name="is_admin" value="1">
-        Administrator rights
-      </label>
+        <span class="toggle-track"></span>
+      </span>
+      <span>Administrator rights</span>
+    </label>
 
-      <button type="submit">Create User</button>
-    </form>
-
-    <p><a href="{{ url_for('admin_users') }}">Back to User List</a></p>
-  </div>
-</body>
-</html>
+    <button class="btn" type="submit">Create user</button>
+  </form>
+</div>
+{% endblock %}

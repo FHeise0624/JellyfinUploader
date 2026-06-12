@@ -1,0 +1,10 @@
+services:
+  jellyfin-uploader:
+    build: .
+    container_name: jellyfin-uploader
+    ports:
+      - "5005:5005"
+    volumes:
+      - /media/felix/server:/media/felix/server
+      - ./instance:/app/instance
+    restart: unless-stopped

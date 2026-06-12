@@ -1,121 +1,168 @@
-# JellyfinUploader **v1.0.0 Pre-release** 
-[📥 Download v1.0.0](https://github.com/FHeise0624/JellyfinUploader/releases/latest)
+# JellyfinUploader **v1.1.0**
+[📥 Download latest](https://github.com/FHeise0624/JellyfinUploader/releases/latest)
 
+**Flask media uploader** for **Jellyfin** with **smart series organization** (`S01E01` auto-naming), role-based folders, and a modern dark UI. Raspberry Pi optimised.
 
-**Flask media uploader** for **Jellyfin** with **AI-powered series organization** (`S01E01` auto-naming) + **role-based folders**. **Production-ready** Flask app.
+**Stack**: Flask 3.1.1 · SQLAlchemy 2.0 · Docker ready
 
-**Current status**: Flask 3.1.1 + SQLAlchemy 2.0. **Raspberry Pi optimised**.
-
-**🚨 PRE-RELEASE**: `python create_admin.py` → `http://localhost:5005`
+---
 
 ## ✨ Features
-- **🤖 Smart Series**: `Breaking Bad/E01.mkv` → `Breaking Bad S01E01.mkv`
-- **📁 Role Folders**: User vs OtherUser (`Photos` vs `Other Users Photos`)
-- **5 Upload Types**: Photos/Videos/**Movies/Series/Directory**
-- **🔐 User Management**: Admin dashboard + `werkzeug` hashing
-- **Production SQLite**: Auto `instance/users.db`
-- **Secure Auth**: Flask-Login + session management
 
-## 🚀 Quick Start (3 Commands)
+- **Smart Series**: `Breaking Bad/E01.mkv` → `Breaking Bad S01E01.mkv`
+- **Role-based folders**: per-user paths + shared folders
+- **5 upload types**: Videos / Movies / Series / Directory / Photos (disabled by default)
+- **Modern UI**: dark theme, Inter font, shared CSS via `static/style.css`
+- **Docker**: `Dockerfile` + `docker-compose.yml` included
+- **Feature flags**: enable/disable upload types without code changes
+- **User management**: admin dashboard, role support (`admin` / `user` / `child`)
+- **Secure auth**: Flask-Login + werkzeug password hashing
 
-### **Install & Run**
-```
+---
+
+## 🚀 Quick Start
+
+### Native
+
+```bash
 git clone https://github.com/FHeise0624/JellyfinUploader.git
 cd JellyfinUploader
 pip install -r requirements.txt
-```
-
-### 🚨 Create Admin (Run ONCE)
-
-```
-python create_admin.py
-# Creates: admin / secure_hash / admin role
-```
-
-### Start Server
-```
+python create_admin.py   # run once
 python app.py
 ```
 
-**Login**: `http://localhost:5005` → `admin` / `your_password`
+Open `http://localhost:5005` and log in with the admin credentials.
 
-## 🗂️ Smart Upload Types
+### Docker
 
-| Type | Endpoint | Auto Magic |
-|------|----------|------------|
-| Photos | `/upload/photos` | Personal/Shared folders |
-| Videos | `/upload/video` | Personal/Shared |
-| Movies | `/upload/movie` | Skip duplicates |
-| Series | `/upload/series` | **S01E01 + Season 01** |
-| Directory | `/upload/directory` | Full folder structure |
-
-
-## 👥 Role-Based Paths (app.py)
+```bash
+docker compose up -d
+docker compose exec jellyfin-uploader python create_admin.py  # run once
 ```
-Other User (special):           Regular User:
-├── Other User Photos/         ├── Photos/
-├── Other User Videos/         ├── Videos/
+
+The SQLite database is persisted via a volume mount at `./instance`.
+
+---
+
+## 🗂️ Upload Types
+
+| Type | Endpoint | Notes |
+|------|----------|-------|
+| Videos | `/upload/video` | Personal or shared folder |
+| Movies | `/upload/movie` | Skips duplicates |
+| Series | `/upload/series` | Auto S01E01 + Season 01 naming |
+| Directory | `/upload/directory` | Auto-sorted by media type |
+| Photos | `/upload/photos` | **Disabled by default** (see Feature Flags) |
+
+---
+
+## 🚩 Feature Flags
+
+Upload types can be toggled without touching routes or templates. Flags live at the top of `app.py`:
+
+```python
+app.config['PHOTOS_UPLOAD_ENABLED'] = False  # set True to re-enable
+```
+
+When disabled, the card is hidden from the dashboard and direct URL access redirects back.
+
+---
+
+## 👥 Role-Based Paths
+
+```
+Arnika (special):              Regular user:
+├── Arnikas Photos/            ├── Photos/
+├── Arnikas Videos/            ├── Videos/
 ├── Movies/                    ├── Movies/
 ├── Series/                    └── Series/
 └── Shared Photos/             └── Shared Photos/
 ```
 
-## 👑 Admin Panel (/admin/users)
-```
-✅ List users: user_db.get_all_users()
-✅ Create: new_user(username, hash, role) 
-✅ Delete: delete_user(userid)
-✅ Secure: werkzeug.security hash
+Paths are configured in `app.py` → `set_user_paths()`.
+
+---
+
+## 👑 Admin Panel (`/admin/users`)
+
+- List, create, and delete users
+- Assign roles: `admin`, `user`, `child`
+- Passwords hashed with `werkzeug.security`
+
+---
+
+## 🎨 Frontend
+
+All shared styles are in `static/style.css`. Templates use Jinja2 inheritance via `templates/base.html` — no duplicated CSS per page.
+
+To customize the theme, edit the CSS variables at the top of `style.css`:
+
+```css
+:root {
+  --accent: #7c5cfc;
+  --bg: #0d0b1a;
+  /* ... */
+}
 ```
 
-## 📦 Production Stack (requirements.txt)
-```
-Flask==3.1.1          # Latest Flask
-Flask-Login==0.6.3    # Secure auth
-Flask-SQLAlchemy==3.1.1 # ORM
-SQLAlchemy==2.0.43    # Latest DB
-Werkzeug==3.1.3       # Security
+---
 
-```
+## 📦 Production
 
-## 🚀 Raspberry Pi Production
-```
+```bash
+# Gunicorn (native)
 pip install gunicorn
 gunicorn -w 2 --bind 0.0.0.0:5005 app:app
+
+# Docker (recommended)
+docker compose up -d
 ```
 
-## Customize paths (app.py ~line 70):
+---
+
+## 📁 Structure
+
 ```
-g.upload_folder = '/YOUR_MEDIA/server'
+├── app.py                  # Flask app, routes, feature flags
+├── helper.py               # Series renaming logic
+├── create_admin.py         # One-time admin setup
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── static/
+│   └── style.css           # Shared design system
+├── templates/
+│   ├── base.html           # Base layout (all pages extend this)
+│   ├── dashboard.html
+│   ├── login.html
+│   ├── landing_page.html
+│   ├── movie_upload.html
+│   ├── series_upload.html
+│   ├── video_uploads.html
+│   ├── picture_upload.html
+│   ├── directory_upload.html
+│   ├── admin_user_list.html
+│   └── admin_new_user.html
+└── user/
+    ├── models.py           # SQLAlchemy User model
+    └── user_db.py          # CRUD helpers
 ```
+
+---
 
 ## 🛣️ Roadmap
 
 | Version | Feature | Status |
 |---------|---------|--------|
-| **v1.0.0** | 5 Uploads + series AI | ✅ [Download](https://github.com/FHeise0624/JellyfinUploader/releases/tag/v1.0.0) |
-| v1.1.0 | Jellyfin API | 🔄 Next |
-| v2.0.0 | FastAPI async | 🏗️ Planned |
+| v1.0.0 | 5 upload types + series AI | ✅ |
+| **v1.1.0** | Docker · modern UI · feature flags | ✅ |
+| v1.2.0 | Jellyfin API integration | 🔄 Next |
+| v2.0.0 | FastAPI async rewrite | 🏗️ Planned |
 
-## 🛠️ Tech Highlights
-
-```
-🤖 helper.py: rename_episode(), normalize_season_folder()
-🔐 user_db.py: Secure CRUD + werkzeug hash
-⚙️ app.py: Flask port 5005 + role paths
-🗄️ models.py: SQLAlchemy User (admin/user/child)
-🔧 create_admin.py: Idempotent admin setup
-
-```
-
-## 📁 Structure
-```
-├── app.py # Flask main (5005)
-├── helper.py # 🤖 Series AI
-├── user_db
-```
+---
 
 ## 📄 License
 
 [![License](https://img.shields.io/github/license/FHeise0624/JellyfinUploader)](LICENSE)  
-**MIT License** - see [LICENSE](LICENSE) © Felix Heise
+**MIT License** — see [LICENSE](LICENSE) © Felix Heise

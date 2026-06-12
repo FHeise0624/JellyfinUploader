@@ -1,227 +1,112 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Jellyfin Media Uploader</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      background: linear-gradient(135deg, #6F36FF 0%, #8083FF 100%);
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .container {
-      background: rgba(19, 19, 28, 0.97);
-      border-radius: 18px;
-      padding: 38px 24px;
-      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
-      min-width: 320px;
-      max-width: 380px;
-      position: relative;
-    }
-    .back-button {
-      background: transparent;
-      border: none;
-      color: #a6afff;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-bottom: 13px;
-      text-decoration: underline;
-      position: absolute;
-      left: 24px;
-      top: 20px;
-    }
-    .back-button:hover {
-      color: #fff;
-    }
-    h1 {
-      font-size: 1.7rem;
-      margin-bottom: 0.5em;
-      text-align: center;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #9f9fff;
-      margin-top: 48px;
-    }
-    .jellyfin-logo {
-      display: block;
-      margin: 0 auto 18px auto;
-      height: 50px;
-      width: auto;
-      filter: drop-shadow(0 2px 16px #6f36ff80);
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      align-items: center;
-    }
-    input[type="file"] {
-      border: none;
-      background: none;
-      color: #dee0fc;
-      font-size: 1rem;
-      margin-bottom: 6px;
-    }
-    input[type="submit"] {
-      background: linear-gradient(90deg, #6f36ff 0%, #8083ff 100%);
-      border: none;
-      color: #fff;
-      font-size: 1.05rem;
-      font-weight: 600;
-      padding: 12px 38px;
-      border-radius: 24px;
-      box-shadow: 0 2px 6px #6f36ff40;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    input[type="submit"]:hover {
-      background: #6f36ff;
-    }
-    .info {
-      text-align: center;
-      font-size: 0.95rem;
-      margin-top: 12px;
-      color: #b6b7fb;
-    }
-    @media screen and (max-width: 500px) {
-      .container {
-        max-width: 95vw;
-        padding: 12vw 4vw;
-      }
-      h1 {
-        font-size: 1.2rem;
-      }
-      .back-button {
-        left: 6vw;
-      }
-    }
-    .progress-container {
-      width: 100%;
-      margin: 18px 0;
-      height: 22px;
-      background: #2a294a;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .progress-bar {
-      width: 0;
-      height: 100%;
-      background: linear-gradient(90deg,#6F36FF 0%,#8083FF 100%);
-      transition: width 0.2s;
-    }
-    .progress-text {
-      text-align: center;
-      color: #b6b7fb;
-      font-size: 0.87rem;
-      margin-bottom: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <button class="back-button" onclick="window.location.href='/dashboard'">&larr; Back to Dashboard</button>
-    <svg class="jellyfin-logo" viewBox="0 0 464 464" fill="none"><ellipse cx="232" cy="232" rx="232" ry="232" fill="#6F36FF"/><path d="M232 368c119.6-92.837 207.431-101.628 185.93-212.196C397.536 49.875 318.608 82.371 232 168.001c-86.608-85.63-165.536-118.126-185.93-12.197C24.569 266.372 112.399 275.163 232 368z" fill="#8083FF"/></svg>
-    <h1>Jellyfin Media Uploader</h1>
-    <form id="uploadForm" method="post" enctype="multipart/form-data">
-      <label>
+{% extends "base.html" %}
+{% block title %}Upload Directory – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:40px;">
+  <a class="back-link" href="/dashboard">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Dashboard
+  </a>
+
+  <h1 class="card-title">Upload Directory</h1>
+  <p class="card-subtitle">Photos and videos are auto-sorted by type into the correct folders.</p>
+
+  <form id="uploadForm" method="post" enctype="multipart/form-data">
+    <label class="toggle-row">
+      <span class="toggle">
         <input type="checkbox" id="shared" name="shared">
-        Upload to shared folder
-      </label>
+        <span class="toggle-track"></span>
+      </span>
+      <span>Upload to shared folder</span>
+    </label>
+
+    <div class="file-zone">
       <input type="file" name="file" id="fileInput" webkitdirectory multiple>
-      <input type="submit" value="Upload Folder">
-    </form>
-    <div class="progress-text" id="progressTextOverall"></div>
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBarOverall"></div>
+      <span class="file-zone-icon">📁</span>
+      <span class="file-zone-hint">Click to choose a folder</span>
+      <div class="file-zone-name" id="folderName"></div>
     </div>
-    <div class="progress-text" id="progressTextCurrent"></div>
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBarCurrent"></div>
-    </div>
-    <div class="info">
-      <span>Choose a folder containing pictures and videos to upload.<br>
-      Files will be auto-sorted by media type.<br>
-      Mobile/tablet friendly.</span>
+
+    <button class="btn" type="submit">Upload</button>
+  </form>
+
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressTextOverall"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBarOverall"></div>
     </div>
   </div>
-  <script>
-    async function uploadFileWithProgress(file, onProgress) {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const formData = new FormData();
-        formData.append('file', file, file.webkitRelativePath || file.name);
-        formData.append('shared', document.getElementById('shared').checked ? 'on' : '');
-        xhr.open('POST', '/upload/directory', true);
-        xhr.upload.onprogress = function(e) {
-          if (e.lengthComputable) {
-            const percent = Math.min((e.loaded / e.total) * 100, 99.9);
-            onProgress(percent);
-          }
-        };
-        xhr.onload = function () {
-          if (xhr.status === 200) {
-            setTimeout(() => {
-              onProgress(100);
-              resolve();
-            }, 150);
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.send(formData);
-      });
-    }
 
-    async function uploadFilesSequentially(files) {
-      const progressBarOverall = document.getElementById('progressBarOverall');
-      const progressTextOverall = document.getElementById('progressTextOverall');
-      const progressBarCurrent = document.getElementById('progressBarCurrent');
-      const progressTextCurrent = document.getElementById('progressTextCurrent');
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressTextCurrent"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBarCurrent"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('fileInput').addEventListener('change', function() {
+    var n = this.files.length;
+    document.getElementById('folderName').textContent = n + ' file' + (n !== 1 ? 's' : '') + ' selected';
+  });
 
-      for (let i = 0; i < files.length; i++) {
-        progressTextOverall.innerText = `Gesamt: ${i} von ${files.length} Dateien hochgeladen`;
-        progressBarOverall.style.width = ((i / files.length) * 100) + '%';
-
-        progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length} wird hochgeladen...`;
-        progressBarCurrent.style.width = '0%';
-
-        try {
-          await uploadFileWithProgress(files[i], percent => {
-            progressBarCurrent.style.width = percent + '%';
-            progressTextCurrent.innerText = `Datei ${i + 1} von ${files.length}: ${percent.toFixed(1)}%`;
-          });
-        } catch (error) {
-          progressTextCurrent.innerText = `Fehler beim Upload der Datei ${i + 1}: ${error.message}`;
-          break;
-        }
-      }
-
-      progressBarOverall.style.width = '100%';
-      progressTextOverall.innerText = 'Alle Uploads abgeschlossen';
-
-      setTimeout(() => {
-        progressBarOverall.style.width = '0%';
-        progressTextOverall.innerText = '';
-        progressBarCurrent.style.width = '0%';
-        progressTextCurrent.innerText = '';
-        document.getElementById('uploadForm').reset();
-      }, 2000);
-    }
-
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const files = document.getElementById('fileInput').files;
-      if (!files.length) return;
-      uploadFilesSequentially(files);
+  async function uploadFileWithProgress(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file, file.webkitRelativePath || file.name);
+      formData.append('shared', document.getElementById('shared').checked ? 'on' : '');
+      xhr.open('POST', '/upload/directory', true);
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) onProgress(Math.min((e.loaded / e.total) * 100, 99.9));
+      };
+      xhr.onload = function() {
+        if (xhr.status === 200) { setTimeout(() => { onProgress(100); resolve(); }, 150); }
+        else reject(new Error('Upload failed: ' + xhr.status));
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(formData);
     });
-  </script>
-</body>
-</html>
+  }
+
+  async function uploadFilesSequentially(files) {
+    const barOverall  = document.getElementById('progressBarOverall');
+    const textOverall = document.getElementById('progressTextOverall');
+    const barCurrent  = document.getElementById('progressBarCurrent');
+    const textCurrent = document.getElementById('progressTextCurrent');
+
+    for (let i = 0; i < files.length; i++) {
+      textOverall.textContent = 'Overall: ' + i + ' of ' + files.length + ' uploaded';
+      barOverall.style.width = ((i / files.length) * 100) + '%';
+      barCurrent.style.width = '0%';
+      textCurrent.textContent = 'File ' + (i + 1) + ' of ' + files.length + '…';
+      try {
+        await uploadFileWithProgress(files[i], pct => {
+          barCurrent.style.width = pct + '%';
+          textCurrent.textContent = 'File ' + (i + 1) + ' of ' + files.length + ': ' + pct.toFixed(1) + '%';
+        });
+      } catch (err) {
+        textCurrent.textContent = 'Error on file ' + (i + 1) + ': ' + err.message;
+        break;
+      }
+    }
+
+    barOverall.style.width = '100%';
+    textOverall.textContent = 'All uploads complete!';
+    setTimeout(() => {
+      barOverall.style.width = '0'; textOverall.textContent = '';
+      barCurrent.style.width  = '0'; textCurrent.textContent  = '';
+      document.getElementById('uploadForm').reset();
+      document.getElementById('folderName').textContent = '';
+    }, 2000);
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const files = document.getElementById('fileInput').files;
+    if (!files.length) return;
+    uploadFilesSequentially(files);
+  });
+</script>
+{% endblock %}

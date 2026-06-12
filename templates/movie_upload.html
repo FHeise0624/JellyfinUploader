@@ -1,116 +1,103 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Upload a Movie</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { background:linear-gradient(135deg,#6F36FF,#8083FF 100%); font-family:'Segoe UI',Arial,sans-serif; color:#fff; margin:0; min-height:100vh; display:flex;align-items:center;justify-content:center; flex-direction: column; }
-    .container { background:rgba(30,14,60,0.97); border-radius:18px; padding:34px 20px; box-shadow:0 8px 32px 0 rgba(0,0,0,0.18); min-width:300px; max-width:350px; }
-    h1 { font-size:1.32rem; margin-bottom:0.9em; text-align:center; font-weight:700; color:#a6afff; }
-    label { display:block; margin-bottom:9px; font-weight:600; }
-    .progress-container {width:100%;margin:18px 0 0 0; height:20px; background:#2a294a; border-radius:10px; overflow:hidden;}
-    .progress-bar {width:0;height:100%;background:linear-gradient(90deg,#6F36FF 0%,#8083FF 100%);transition:width 0.2s;}
-    .progress-text {text-align:center;color:#b6b7fb;font-size:0.9rem;margin-bottom:8px;}
-    input[type="file"], select, input[type="text"] {margin-bottom:16px;}
-    input[type="submit"] {background:linear-gradient(90deg,#6f36ff 0%,#8083ff 100%); border:none;color:#fff;font-size:1.05rem;font-weight:600;padding:10px 30px;border-radius:24px;box-shadow:0 2px 6px #6f36ff40;cursor:pointer;transition:background 0.2s;margin-top:4px;}
-    input[type="submit"]:hover {background:#6f36ff;}
-    #new-directory-field {display:none;}
-    .back-button {
-      background: transparent;
-      border: none;
-      color: #a6afff;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-bottom: 16px;
-      text-decoration: underline;
-      align-self: flex-start;
-    }
-    .back-button:hover {
-      color: #fff;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <button class="back-button" onclick="window.location.href='/dashboard'">&larr; Back to Dashboard</button>
-    <h1>Upload a Movie</h1>
-    <form id="uploadForm">
-      <label for="directory">Choose destination folder:</label>
+{% extends "base.html" %}
+{% block title %}Upload Movie – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:40px;">
+  <a class="back-link" href="/dashboard">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Dashboard
+  </a>
+
+  <h1 class="card-title">Upload Movie</h1>
+
+  <form id="uploadForm">
+    <div class="form-group">
+      <label class="form-label" for="directory">Destination folder</label>
       <select id="directory" name="directory" required>
         {% for d in directories %}
           <option value="{{ d }}">{{ d }}</option>
         {% endfor %}
-          <option value="__new__">Create a new folder...</option>
+        <option value="__new__">Create new folder…</option>
       </select>
-      <div id="new-directory-field">
-        <label for="new_directory">New folder name:</label>
-        <input type="text" name="new_directory" id="new_directory">
-      </div>
-      <label for="movie">Choose a movie:</label>
+    </div>
+
+    <div class="form-group" id="new-directory-field" style="display:none;">
+      <label class="form-label" for="new_directory">New folder name</label>
+      <input type="text" name="new_directory" id="new_directory" placeholder="e.g. Interstellar (2014)">
+    </div>
+
+    <div class="file-zone" id="fileZone">
       <input type="file" name="movie" id="movie" accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.webm,.mpg,.mpeg,.m4v,.3gp,.3g2,.mts,.m2ts,.ts" required>
-      <input type="submit" value="Upload">
-    </form>
-    <div class="progress-text" id="progressText"></div>
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
+      <span class="file-zone-icon">🎞️</span>
+      <span class="file-zone-hint">Click to choose a movie file</span>
+      <div class="file-zone-name" id="movieName"></div>
+    </div>
+
+    <button class="btn" type="submit">Upload</button>
+  </form>
+
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressText"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBar"></div>
     </div>
   </div>
-  <script>
-    document.getElementById('directory').addEventListener('change', function() {
-      var newField = document.getElementById('new-directory-field');
-      var newInput = document.getElementById('new_directory');
-      if (this.value === "__new__") {
-        newField.style.display = "block";
-        newInput.required = true;
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('movie').addEventListener('change', function() {
+    const name = this.files[0] ? this.files[0].name : '';
+    document.getElementById('movieName').textContent = name;
+  });
+
+  document.getElementById('directory').addEventListener('change', function() {
+    const show = this.value === '__new__';
+    document.getElementById('new-directory-field').style.display = show ? 'block' : 'none';
+    document.getElementById('new_directory').required = show;
+  });
+
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var file = document.getElementById('movie').files[0];
+    var directory = document.getElementById('directory').value;
+    var new_directory = document.getElementById('new_directory').value;
+    if (!file) return;
+
+    var formData = new FormData();
+    formData.append('movie', file, file.name);
+    formData.append('directory', directory);
+    if (directory === '__new__' && new_directory) formData.append('new_directory', new_directory);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload/movie', true);
+    var progressBar = document.getElementById('progressBar');
+    var progressText = document.getElementById('progressText');
+
+    xhr.upload.onprogress = function(e) {
+      if (e.lengthComputable) {
+        var pct = (e.loaded / e.total * 100).toFixed(1);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = 'Uploading… ' + pct + '%';
+      }
+    };
+
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        progressBar.style.width = '100%';
+        progressText.textContent = 'Upload complete!';
+        setTimeout(() => {
+          progressBar.style.width = '0';
+          progressText.textContent = '';
+          document.getElementById('uploadForm').reset();
+          document.getElementById('movieName').textContent = '';
+          document.getElementById('new-directory-field').style.display = 'none';
+        }, 2000);
       } else {
-        newField.style.display = "none";
-        newInput.required = false;
+        progressText.textContent = 'Error: ' + xhr.status;
       }
-    });
+    };
 
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var form = e.target;
-      var file = document.getElementById('movie').files[0];
-      var directory = document.getElementById('directory').value;
-      var new_directory = document.getElementById('new_directory').value;
-      if (!file) return;
-
-      var formData = new FormData();
-      formData.append('movie', file, file.name);
-      formData.append('directory', directory);
-      if (directory === "__new__" && new_directory) {
-        formData.append('new_directory', new_directory);
-      }
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/upload/movie', true);
-
-      var progressBar = document.getElementById('progressBar');
-      var progressText = document.getElementById('progressText');
-
-      xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-          var percent = (e.loaded / e.total * 100).toFixed(1);
-          progressBar.style.width = percent + "%";
-          progressText.innerText = "Uploading... " + percent + "%";
-        }
-      };
-
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          progressBar.style.width = "100%";
-          progressText.innerText = "Upload complete!";
-          setTimeout(()=>{progressBar.style.width="0";progressText.innerText="";form.reset();document.getElementById('new-directory-field').style.display="none";},2000);
-        } else {
-          progressText.innerText = "Error: " + xhr.status;
-        }
-      };
-
-      xhr.send(formData);
-    });
-  </script>
-</body>
-</html>
+    xhr.send(formData);
+  });
+</script>
+{% endblock %}

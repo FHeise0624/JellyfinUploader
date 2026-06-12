@@ -1,160 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Admin: User Management</title>
-  <style>
-    body {
-      background: linear-gradient(135deg, #6F36FF 0%, #8083FF 100%);
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .container {
-      background: rgba(19, 19, 28, 0.97);
-      border-radius: 18px;
-      padding: 38px 24px;
-      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
-      min-width: 320px;
-      max-width: 700px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    h1 {
-      font-size: 1.7rem;
-      margin-bottom: 1em;
-      text-align: center;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #9f9fff;
-    }
-    a.button {
-      display: inline-block;
-      background: linear-gradient(90deg,#6F36FF 0%,#8083FF 100%);
-      color: #fff;
-      padding: 12px 28px;
-      text-decoration: none;
-      border-radius: 24px;
-      font-weight: 600;
-      font-size: 1.05rem;
-      box-shadow: 0 2px 6px #6f36ff40;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-bottom: 20px;
-    }
-    a.button:hover {
-      background: #6f36ff;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      background: #2a294a;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 0 25px rgba(111,54,255,0.2);
-    }
-    th, td {
-      padding: 12px 16px;
-      border-bottom: 1px solid #444466;
-      text-align: left;
-      font-size: 1rem;
-      color: #dee0fc;
-    }
-    th {
-      background: #3c3a63;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #a6afff;
-    }
-    tr:last-child td {
-      border-bottom: none;
-    }
-    form {
-      display: inline;
-      margin: 0;
-    }
-    button.delete-button {
-      background: linear-gradient(90deg,#6F36FF 0%,#8083FF 100%);
-      border-radius: 24px;
-      font-size: 1rem;
-      color: #fff;
-      font-weight: 600;
-      padding: 8px 22px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 2px 6px #6f36ff40;
-      transition: background 0.2s;
-      user-select: none;
-    }
-    button.delete-button:hover {
-      background: #6f36ff;
-    }
-    td:nth-child(3) {
-      width: 150px;
-    }
-    @media screen and (max-width: 600px) {
-      .container {
-        max-width: 95vw;
-        padding: 20px 12px;
-      }
-      th, td {
-        font-size: 0.9rem;
-        padding: 10px 8px;
-      }
-      a.button {
-        padding: 10px 20px;
-        font-size: 1rem;
-      }
-      button.delete-button {
-        padding: 6px 14px;
-        font-size: 0.9rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>User Management</h1>
+{% extends "base.html" %}
+{% block title %}User Management – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card card-wide" style="margin-top:40px;">
+  <a class="back-link" href="/dashboard">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Dashboard
+  </a>
 
-    <a href="{{ url_for('admin_new_user') }}" class="button">Add New User</a>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Role</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %}
-        <tr>
-          <td>{{ user.username }}</td>
-          <td>{{ user.role.capitalize() }}</td>
-          <td>
-            {% if current_user.username != user.username %}
-            <form action="{{ url_for('admin_delete_user', userid=user.id) }}" method="post" onsubmit="return confirm('Delete user {{ user.username }}?');">
-              <button type="submit" class="delete-button">Delete</button>
-            </form>
-            {% else %}
-            (You)
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="3" style="text-align:center;">No users found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <p style="text-align:center; margin-top: 20px;">
-      <a href="{{ url_for('dashboard') }}" style="color:#a6afff; text-decoration:underline;">Back to Dashboard</a>
-    </p>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <h1 class="card-title" style="margin-bottom:0;">Users</h1>
+    <a href="{{ url_for('admin_new_user') }}" class="btn btn-sm">+ Add user</a>
   </div>
-</body>
-</html>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.username }}</td>
+        <td>
+          <span class="badge badge-{{ user.role }}">{{ user.role.capitalize() }}</span>
+        </td>
+        <td style="text-align:right;">
+          {% if current_user.username != user.username %}
+          <form action="{{ url_for('admin_delete_user', userid=user.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete {{ user.username }}?');">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+          {% else %}
+          <span style="font-size:0.8rem; color:var(--text-muted);">You</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:24px;">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
