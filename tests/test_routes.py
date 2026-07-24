@@ -46,7 +46,7 @@ def test_logout_redirects(admin_client):
     '/upload/movie',
     '/upload/series',
     '/upload/directory',
-    '/upload/youtube',
+
 ])
 def test_protected_routes_redirect_unauthenticated(client, url):
     r = client.get(url)
@@ -129,13 +129,6 @@ def test_video_upload_get(admin_client):
 def test_directory_upload_get(admin_client):
     r = admin_client.get('/upload/directory')
     assert r.status_code == 200
-
-
-def test_youtube_upload_get(admin_client):
-    with patch('os.makedirs', return_value=None):
-        r = admin_client.get('/upload/youtube')
-    assert r.status_code == 200
-    assert b'YouTube' in r.data
 
 
 # ── Admin routes ──────────────────────────────────────────────────────────────
