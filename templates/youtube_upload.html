@@ -8,12 +8,43 @@
   </a>
 
   <h1 class="card-title">Upload YouTube</h1>
-  <p class="card-subtitle">Wähle einen Ordner aus – die Ordnerstruktur wird 1:1 übernommen. Bereits vorhandene Dateien werden übersprungen.</p>
+  <p class="card-subtitle">Einzelne Videos oder ganze Ordner – Duplikate werden übersprungen.</p>
 
   <form id="uploadForm" enctype="multipart/form-data">
+
+    <!-- Einzelne Videos -->
+    <div class="form-label" style="margin-bottom:8px;">Einzelne Videos</div>
+
+    <div class="form-group">
+      <label class="form-label" for="directory">Zielordner</label>
+      <select id="directory" name="directory">
+        <option value="">YouTube/ (Root)</option>
+        {% for d in directories %}
+          <option value="{{ d }}">{{ d }}</option>
+        {% endfor %}
+        <option value="__new__">Neuen Ordner erstellen…</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="new-directory-field" style="display:none;">
+      <label class="form-label" for="new_directory">Neuer Ordnername</label>
+      <input type="text" id="new_directory" placeholder="z.B. Kanalname">
+    </div>
+
     <div class="file-zone">
-      <input type="file" name="file" id="fileInput" multiple webkitdirectory required>
-      <span class="file-zone-icon">▶️</span>
+      <input type="file" id="fileInput" multiple accept=".mp4,.mkv,.avi,.mov,.webm,.m4v,.flv">
+      <span class="file-zone-icon">🎬</span>
+      <span class="file-zone-hint">Klicke um Videos auszuwählen</span>
+      <div class="file-zone-name" id="filesName"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Ordner -->
+    <div class="form-label" style="margin-bottom:8px;">Ordner</div>
+    <div class="file-zone">
+      <input type="file" id="folderInput" multiple webkitdirectory>
+      <span class="file-zone-icon">📁</span>
       <span class="file-zone-hint">Klicke um einen Ordner auszuwählen</span>
       <div class="file-zone-name" id="folderName"></div>
     </div>
@@ -38,16 +69,26 @@
 {% endblock %}
 {% block scripts %}
 <script>
+  document.getElementById('directory').addEventListener('change', function() {
+    const show = this.value === '__new__';
+    document.getElementById('new-directory-field').style.display = show ? 'block' : 'none';
+  });
+
   document.getElementById('fileInput').addEventListener('change', function() {
+    var n = this.files.length;
+    document.getElementById('filesName').textContent = n + ' Video' + (n !== 1 ? 's' : '') + ' ausgewählt';
+  });
+
+  document.getElementById('folderInput').addEventListener('change', function() {
     var n = this.files.length;
     document.getElementById('folderName').textContent = n + ' Datei' + (n !== 1 ? 'en' : '') + ' ausgewählt';
   });
 
-  async function uploadFileWithProgress(file, onProgress) {
+  async function uploadFileWithProgress(file, filename, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
-      formData.append('file', file, file.webkitRelativePath || file.name);
+      formData.append('file', file, filename);
       xhr.open('POST', '/upload/youtube', true);
       xhr.upload.onprogress = function(e) {
         if (e.lengthComputable) onProgress(Math.min((e.loaded / e.total) * 100, 99.9));
@@ -61,25 +102,25 @@
     });
   }
 
-  async function uploadFilesSequentially(files) {
+  async function uploadFilesSequentially(entries) {
     const barOverall  = document.getElementById('progressBarOverall');
     const textOverall = document.getElementById('progressTextOverall');
     const barCurrent  = document.getElementById('progressBarCurrent');
     const textCurrent = document.getElementById('progressTextCurrent');
 
-    for (let i = 0; i < files.length; i++) {
-      textOverall.textContent = 'Gesamt: ' + i + ' von ' + files.length + ' hochgeladen';
-      barOverall.style.width = ((i / files.length) * 100) + '%';
+    for (let i = 0; i < entries.length; i++) {
+      const { file, filename } = entries[i];
+      textOverall.textContent = 'Gesamt: ' + i + ' von ' + entries.length + ' hochgeladen';
+      barOverall.style.width = ((i / entries.length) * 100) + '%';
       barCurrent.style.width = '0%';
-      textCurrent.textContent = 'Datei ' + (i + 1) + ' von ' + files.length + '…';
 
       try {
-        await uploadFileWithProgress(files[i], pct => {
+        await uploadFileWithProgress(file, filename, pct => {
           barCurrent.style.width = pct + '%';
-          textCurrent.textContent = 'Datei ' + (i + 1) + ' von ' + files.length + ': ' + pct.toFixed(1) + '%';
+          textCurrent.textContent = filename.split('/').pop() + ': ' + pct.toFixed(1) + '%';
         });
       } catch (err) {
-        textCurrent.textContent = 'Fehler bei Datei ' + (i + 1) + ': ' + err.message;
+        textCurrent.textContent = 'Fehler: ' + err.message;
         break;
       }
     }
@@ -90,15 +131,38 @@
       barOverall.style.width = '0'; textOverall.textContent = '';
       barCurrent.style.width  = '0'; textCurrent.textContent  = '';
       document.getElementById('uploadForm').reset();
+      document.getElementById('filesName').textContent = '';
       document.getElementById('folderName').textContent = '';
+      document.getElementById('new-directory-field').style.display = 'none';
     }, 2000);
   }
 
   document.getElementById('uploadForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const files = document.getElementById('fileInput').files;
-    if (!files.length) return;
-    uploadFilesSequentially(files);
+
+    // Zielordner für Einzelvideos bestimmen
+    const dirSelect = document.getElementById('directory');
+    let targetDir = dirSelect.value === '__new__'
+      ? document.getElementById('new_directory').value.trim()
+      : dirSelect.value;
+
+    const entries = [];
+
+    // Einzelne Videos → in gewählten Zielordner
+    const singleFiles = document.getElementById('fileInput').files;
+    for (let f of singleFiles) {
+      const filename = targetDir ? targetDir + '/' + f.name : f.name;
+      entries.push({ file: f, filename });
+    }
+
+    // Ordner → Struktur beibehalten
+    const folderFiles = document.getElementById('folderInput').files;
+    for (let f of folderFiles) {
+      entries.push({ file: f, filename: f.webkitRelativePath || f.name });
+    }
+
+    if (!entries.length) return;
+    uploadFilesSequentially(entries);
   });
 </script>
 {% endblock %}

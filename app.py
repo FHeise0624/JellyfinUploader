@@ -61,6 +61,7 @@ def set_user_paths():
         g.videos_folder = None
         g.movie_folder = None
         g.series_folder = None
+        g.youtube_folder = None
 
 
 @login_manager.user_loader
@@ -330,7 +331,8 @@ def upload_youtube():
 
         return '', 200
 
-    return render_template('youtube_upload.html')
+    dir_list = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
+    return render_template('youtube_upload.html', directories=dir_list)
 
 
 @app.route('/admin/users')

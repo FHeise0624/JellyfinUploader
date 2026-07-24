@@ -2,7 +2,7 @@ from user.models import db, User
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_user_by_id(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 def get_all_users():
     return User.query.all()
@@ -25,7 +25,7 @@ def new_user(username, password, role):
     db.session.commit()
 
 def delete_user(userid):
-    user = User.query.get(int(userid))
+    user = db.session.get(User, int(userid))
     if user:
         db.session.delete(user)
         db.session.commit()
