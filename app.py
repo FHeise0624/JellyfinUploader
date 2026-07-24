@@ -45,6 +45,7 @@ def set_user_paths():
             g.series_folder = '/media/felix/server/Series'
             g.shared_pictures_folder = '/media/felix/server/Shared Photos'
             g.shared_videos_folder = '/media/felix/server/Shared Videos'
+            g.youtube_folder = '/media/felix/server/YouTube'
         else:
             g.upload_folder = '/media/felix/server'
             g.pictures_folder = '/media/felix/server/Photos'
@@ -53,6 +54,7 @@ def set_user_paths():
             g.series_folder = '/media/felix/server/Series'
             g.shared_pictures_folder = '/media/felix/server/Shared Photos'
             g.shared_videos_folder = '/media/felix/server/Shared Videos'
+            g.youtube_folder = '/media/felix/server/YouTube'
     else:
         g.upload_folder = None
         g.pictures_folder = None
@@ -295,6 +297,40 @@ def upload_directory():
         return '', 200
     else:
         return render_template('directory_upload.html')
+
+
+# YouTube upload
+@app.route('/upload/youtube', methods=['GET', 'POST'])
+@login_required
+def upload_youtube():
+    base_dir = g.youtube_folder
+    os.makedirs(base_dir, exist_ok=True)
+
+    if request.method == 'POST':
+        files = request.files.getlist('file')
+        if not files:
+            return 'No files uploaded', 400
+
+        for file in files:
+            rel_path = file.filename.replace('\\', '/')
+            if not rel_path:
+                continue
+
+            target_path = os.path.join(base_dir, rel_path)
+            target_dir = os.path.dirname(target_path)
+            os.makedirs(target_dir, exist_ok=True)
+
+            if os.path.exists(target_path):
+                continue
+
+            try:
+                file.save(target_path)
+            except Exception as e:
+                print(f"Error saving {target_path}: {e}")
+
+        return '', 200
+
+    return render_template('youtube_upload.html')
 
 
 @app.route('/admin/users')

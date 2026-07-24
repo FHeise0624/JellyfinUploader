@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Upload YouTube – Jellyfin Uploader{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:40px;">
+  <a class="back-link" href="/dashboard">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Dashboard
+  </a>
+
+  <h1 class="card-title">Upload YouTube</h1>
+  <p class="card-subtitle">Wähle einen Ordner aus – die Ordnerstruktur wird 1:1 übernommen. Bereits vorhandene Dateien werden übersprungen.</p>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <div class="file-zone">
+      <input type="file" name="file" id="fileInput" multiple webkitdirectory required>
+      <span class="file-zone-icon">▶️</span>
+      <span class="file-zone-hint">Klicke um einen Ordner auszuwählen</span>
+      <div class="file-zone-name" id="folderName"></div>
+    </div>
+
+    <button class="btn" type="submit">Upload</button>
+  </form>
+
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressTextOverall"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBarOverall"></div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressTextCurrent"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBarCurrent"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('fileInput').addEventListener('change', function() {
+    var n = this.files.length;
+    document.getElementById('folderName').textContent = n + ' Datei' + (n !== 1 ? 'en' : '') + ' ausgewählt';
+  });
+
+  async function uploadFileWithProgress(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file, file.webkitRelativePath || file.name);
+      xhr.open('POST', '/upload/youtube', true);
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) onProgress(Math.min((e.loaded / e.total) * 100, 99.9));
+      };
+      xhr.onload = function() {
+        if (xhr.status === 200) { onProgress(100); resolve(); }
+        else reject(new Error('Upload fehlgeschlagen: ' + xhr.status));
+      };
+      xhr.onerror = () => reject(new Error('Netzwerkfehler'));
+      xhr.send(formData);
+    });
+  }
+
+  async function uploadFilesSequentially(files) {
+    const barOverall  = document.getElementById('progressBarOverall');
+    const textOverall = document.getElementById('progressTextOverall');
+    const barCurrent  = document.getElementById('progressBarCurrent');
+    const textCurrent = document.getElementById('progressTextCurrent');
+
+    for (let i = 0; i < files.length; i++) {
+      textOverall.textContent = 'Gesamt: ' + i + ' von ' + files.length + ' hochgeladen';
+      barOverall.style.width = ((i / files.length) * 100) + '%';
+      barCurrent.style.width = '0%';
+      textCurrent.textContent = 'Datei ' + (i + 1) + ' von ' + files.length + '…';
+
+      try {
+        await uploadFileWithProgress(files[i], pct => {
+          barCurrent.style.width = pct + '%';
+          textCurrent.textContent = 'Datei ' + (i + 1) + ' von ' + files.length + ': ' + pct.toFixed(1) + '%';
+        });
+      } catch (err) {
+        textCurrent.textContent = 'Fehler bei Datei ' + (i + 1) + ': ' + err.message;
+        break;
+      }
+    }
+
+    barOverall.style.width = '100%';
+    textOverall.textContent = 'Alle Uploads abgeschlossen!';
+    setTimeout(() => {
+      barOverall.style.width = '0'; textOverall.textContent = '';
+      barCurrent.style.width  = '0'; textCurrent.textContent  = '';
+      document.getElementById('uploadForm').reset();
+      document.getElementById('folderName').textContent = '';
+    }, 2000);
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const files = document.getElementById('fileInput').files;
+    if (!files.length) return;
+    uploadFilesSequentially(files);
+  });
+</script>
+{% endblock %}
