@@ -331,7 +331,12 @@ def upload_youtube():
 
         return '', 200
 
-    dir_list = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
+    dir_list = []
+    for root, dirs, _ in os.walk(base_dir):
+        dirs.sort()
+        for d in dirs:
+            rel = os.path.relpath(os.path.join(root, d), base_dir).replace('\\', '/')
+            dir_list.append(rel)
     return render_template('youtube_upload.html', directories=dir_list)
 
 
