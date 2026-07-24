@@ -20,7 +20,9 @@
       <select id="directory" name="directory">
         <option value="">YouTube/ (Root)</option>
         {% for d in directories %}
-          <option value="{{ d }}">{{ d }}</option>
+	  {% set parts = d.split('/') %}
+	  {% set depth = parts|length - 1 %}
+          <option value="{{ d }}">{{ ' ' *  depth }}{{ '└ ' if depth > 0  else ''}}{{ parts[-1] }}</option>
         {% endfor %}
         <option value="__new__">Neuen Ordner erstellen…</option>
       </select>
