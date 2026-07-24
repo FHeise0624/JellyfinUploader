@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5005
 
-CMD ["gunicorn", "-w", "2", "--bind", "0.0.0.0:5005", "app:app"]
+CMD ["gunicorn", "-w", "2", "--bind", "0.0.0.0:5005", "--timeout", "0", "app:app"]
